@@ -1,6 +1,6 @@
 # Wikidata Hierarchical Tree
 
-This visualization tool uses the main hierarchical relation types from Wikidata — **subclass of**, **part of**, and **instance of** — to represent entities in a simple, hierarchical tree that is easy to traverse.
+This visualization tool uses the main hierarchical relation types from Wikidata (subclass of, part of, instance of) to represent entities in a simple, hierarchical tree that is easy to traverse.
 
 
 
@@ -75,7 +75,7 @@ https://dumps.wikimedia.org/wikidatawiki/entities/20251222/wikidata-20251222-all
 For `label`, `description`, and `aliases`, a cascading language fallback is used: en > en-gb > en-ca > simple > mul > nl > ru > any other
 
 ### Additional processing
-- Added entity **“ungrouped”** with QID `Q7`, allowing ungrouped entities to be accessed in the tree.
+- Added entity **“ungrouped”** with QID `Q7`, and gave ungrouped items this entity, allowing them to be accessed in the tree.
 
 ## API Fields
 
