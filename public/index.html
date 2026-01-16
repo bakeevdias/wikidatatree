@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wikidata hierarchical tree</title>
+    <style>
+        body {
+            font-family: monospace;
+            margin: 20px;
+            background: #fff;
+        }
+        
+        #searchInput {
+            width: 800px;
+            padding: 5px;
+            font-size: 14px;
+        }
+        
+        #results {
+            border: 1px solid #ccc;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+            background: white;
+            width: 812px;
+        }
+        
+        #results.show {
+            display: block;
+        }
+        
+        .result-item {
+            padding: 5px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            display: grid;
+            grid-template-columns: 2fr 3fr;
+            gap: 10px;
+        }
+        
+        .result-item:hover {
+            background: #f0f0f0;
+        }
+        
+        .result-description {
+            color: #666;
+            font-size: 13px;
+        }
+        
+        .result-label {
+            color: #000;
+        }
+        
+        #entityView {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        #entityView.show {
+            display: block;
+        }
+        
+        #breadcrumbs {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+        
+        .breadcrumb-item {
+            display: inline-block;
+            cursor: pointer;
+            color: #0066cc;
+            text-decoration: underline;
+        }
+        
+        .breadcrumb-item:hover {
+            color: #003d7a;
+        }
+        
+        .breadcrumb-separator {
+            margin: 0 8px;
+            color: #666;
+        }
+        
+        .breadcrumb-item.current {
+            color: #000;
+            text-decoration: none;
+            cursor: default;
+            font-weight: bold;
+        }
+        
+        .node {
+            margin-left: 20px;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+        
+        .node:hover {
+            background: #f0f0f0;
+        }
+              
+        .node[data-description]:hover::after {
+            content: attr(data-description);
+            position: absolute;
+            left: 0;
+            top: 100%;
+            background: #333;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            white-space: normal;
+            max-width: 400px;
+            margin-top: 5px;
+        }
+        
+        /* Increment z-index for each nesting level */
+        .node[data-description]:hover::after {
+            z-index: 1000;
+        }
+        
+        .node .node[data-description]:hover::after {
+            z-index: 1001;
+        }
+        
+        .node .node .node[data-description]:hover::after {
+            z-index: 1002;
+        }
+        
+        .node .node .node .node[data-description]:hover::after {
+            z-index: 1003;
+        }
+        
+        .node .node .node .node .node[data-description]:hover::after {
+            z-index: 1004;
+        }
+        
+        .node .node .node .node .node .node[data-description]:hover::after {
+            z-index: 1005;
+        }
+        
+        .node .node .node .node .node .node .node[data-description]:hover::after {
+            z-index: 1006;
+        }
+        
+        .node .node .node .node .node .node .node .node[data-description]:hover::after {
+            z-index: 1007;
+        }
+        
+        .node .node .node .node .node .node .node .node .node[data-description]:hover::after {
+            z-index: 1008;
+        }
+        
+        .node .node .node .node .node .node .node .node .node .node[data-description]:hover::after {
+            z-index: 1009;
+        }
+        
+        .collapsed > .children {
+            display: none;
+        }
+        
+        .toggle {
+            display: inline-block;
+            width: 15px;
+            font-weight: bold;
+        }
+        
+        .label {
+            color: #000;
+        }
+        
+        .id {
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .id a {
+            color: #666;
+            text-decoration: none;
+        }
+        
+        .id a:hover {
+            text-decoration: underline;
+        }
+        
+        #options {
+            margin-top: 10px;
+			cursor: pointer;
+        }  
+    </style>
+</head>
+<body>   
+      
+    <div>
+		<input type="text" id="searchInput" placeholder="Search...">
+		<label id="options" title="Set limit to 50000 children (default 500). Warning: may be slow for large hierarchies">
+			<input type="checkbox" id="deepSearchCheckbox">
+			deep search
+		</label>
+		<a href="readme.txt" target="_blank" style="margin-left: 15px; color: #0066cc;">readme</a>
+    </div>
+    
+    <div id="results"></div>
+    
+    <div id="entityView"></div>
+
+    <script>
+
+        const API_URL = 'https://wikidatatree.xyz/api.php';
+		const childLimit = 50000;
+        const searchInput = document.getElementById('searchInput');
+        const resultsDiv = document.getElementById('results');
+        const entityView = document.getElementById('entityView');
+        const deepSearchCheckbox = document.getElementById('deepSearchCheckbox');
+        
+        let searchTimeout;
+        let breadcrumbPath = [];
+        
+        // Helper function to format label with relation type
+        function formatLabelWithRelation(label, relationType, isChild = false) {
+            if (!relationType) return label;
+            
+            if (isChild) {
+                // For children: convert relation_type to prefix
+                if (relationType === 'part_of') {
+                    return 'part: ' + label;
+                } else if (relationType === 'instance_of') {
+                    return 'eg ' + label;
+                }
+                // For subclass_of, no prefix for children
+                return label;
+            } else {
+                // For parents: use relation_type as-is with separator
+                return relationType + ': ' + label;
+            }
+        }
+        
+        // Check for ID parameter on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const entityId = urlParams.get('id');
+            if (entityId) {
+                selectEntity(entityId, true);
+            }
+        });
+        
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            clearTimeout(searchTimeout);
+            
+            if (query.length < 2) {
+                resultsDiv.classList.remove('show');
+                return;
+            }
+            
+            searchTimeout = setTimeout(() => searchEntities(query), 300);
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
+                resultsDiv.classList.remove('show');
+            }
+        });
+        
+        async function searchEntities(query) {
+            resultsDiv.innerHTML = 'Loading...';
+            resultsDiv.classList.add('show');
+            
+            try {
+                const response = await fetch(`${API_URL}?action=search&q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                if (data.length === 0) {
+                    resultsDiv.innerHTML = 'No results';
+                    return;
+                }
+                
+                resultsDiv.innerHTML = data.map(item => `
+                    <div class="result-item" onclick="selectEntity('${item.id}', true)">
+                        <div class="result-description">${escapeHtml(item.description || '')}</div>
+                        <div class="result-label">${escapeHtml(item.label)} (${item.id})</div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                resultsDiv.innerHTML = 'Error';
+            }
+        }
+        
+        async function selectEntity(id, resetBreadcrumb = false) {
+            resultsDiv.classList.remove('show');
+            entityView.innerHTML = 'Loading...';
+            entityView.classList.add('show');
+            
+            try {
+                const limit = deepSearchCheckbox.checked ? childLimit : null;
+                const url = limit 
+                    ? `${API_URL}?action=hierarchy&fields=entity,parents&id=${encodeURIComponent(id)}&limit=${limit}`
+                    : `${API_URL}?action=hierarchy&fields=entity,parents&id=${encodeURIComponent(id)}`;
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (resetBreadcrumb) {
+                    breadcrumbPath = [];
+                }
+                
+                displayEntity(data);
+            } catch (error) {
+                entityView.innerHTML = 'Error';
+            }
+        }
+        
+        function displayEntity(data) {
+            const entity = data.entity;
+            const parents = data.parents || [];
+			const breadcrumbs = buildBreadcrumbs(parents, entity);
+            const desc = entity.description ? entity.description : '';			
+                            entityView.innerHTML = `
+                ${breadcrumbs}
+                <div class="node collapsed" data-id="${entity.id}" data-description="${escapeHtml(desc)}">
+                    <span class="toggle" onclick="toggleNode(event, this)">${entity.has_child ? '+' : '·'}</span>
+                    <span class="label">${escapeHtml(entity.label)}</span>
+                    <span class="id">
+                        (<a href="https://www.wikidata.org/wiki/${entity.id}" target="_blank" onclick="event.stopPropagation()">${entity.id}</a>)
+                        (<a href="?id=${entity.id}" onclick="event.stopPropagation();">↑</a>)
+                    </span>
+                    <div class="children"></div>
+                </div>
+            `;
+        }
+        
+        function buildBreadcrumbs(parents, entity) {
+            if (parents.length === 0) {
+                return '<div id="breadcrumbs">No parent hierarchy</div>';
+            }
+            
+            // Show all parents as clickable breadcrumbs with relation type
+            const crumbs = parents.map(p => {
+                const displayLabel = formatLabelWithRelation(p.label, p.relation_type, false);
+                return `<a href="?id=${p.id}" class="breadcrumb-item">${escapeHtml(displayLabel)}</a>`;
+            }).join('<span class="breadcrumb-separator">|</span>');
+            
+            return `<div id="breadcrumbs">${crumbs}<span class="breadcrumb-separator">|</span><span class="breadcrumb-item current">${escapeHtml(entity.label)}</span></div>`;
+        }
+        
+        async function toggleNode(event, toggleElement) {
+            event.stopPropagation();
+            
+            const node = toggleElement.closest('.node');
+            const toggle = node.querySelector('.toggle');
+            const childrenDiv = node.querySelector('.children');
+            const id = node.dataset.id;
+            
+            if (node.classList.contains('collapsed')) {
+                // Expand - load children
+                toggle.textContent = '...';
+                
+                try {
+                    const limit = deepSearchCheckbox.checked ? childLimit : null;
+                    const url = limit 
+                        ? `${API_URL}?action=hierarchy&id=${encodeURIComponent(id)}&limit=${limit}`
+                        : `${API_URL}?action=hierarchy&id=${encodeURIComponent(id)}`;
+                    
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    
+                    if (data.children.length === 0) {
+                        toggle.textContent = '·';
+                        return;
+                    }
+                    
+                    childrenDiv.innerHTML = data.children.map(child => {
+                        const desc = child.description ? child.description : '';
+                        const displayLabel = formatLabelWithRelation(child.label, child.relation_type, true);
+                        return `
+                        <div class="node collapsed" data-id="${child.id}" data-description="${escapeHtml(desc)}">
+                            <span class="toggle" onclick="toggleNode(event, this)">${child.has_child ? '+' : '·'}</span>
+                            <span class="label">${escapeHtml(displayLabel)}</span>
+                            <span class="id">
+                                (<a href="https://www.wikidata.org/wiki/${child.id}" target="_blank" onclick="event.stopPropagation()">${child.id}</a>)
+                                (<a href="?id=${child.id}" onclick="event.stopPropagation();">↑</a>)
+                            </span>
+                            <div class="children"></div>
+                        </div>
+                    `}).join('');
+                    
+                    toggle.textContent = '-';
+                    node.classList.remove('collapsed');
+                } catch (error) {
+                    toggle.textContent = '!';
+                    console.error(error);
+                }
+            } else {
+                // Collapse
+                toggle.textContent = '+';
+                node.classList.add('collapsed');
+            }
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
