@@ -49,7 +49,7 @@ A standalone [html page](public/index.html) is used to consume the API and rende
 
 
 ## Back end
-[R code](scripts/process_wikidata.R) is used to process a Wikidata dump into a sqlite database. The dump is downloaded, imported into MongoDB, processed there and then the sqlite database is generated as `/data/wikidata.db`.
+[R code](scripts/process_wikidata.R) is used to process a Wikidata dump into a sqlite database. The dump is downloaded, unzipped, imported and processed in MongoDB, and then the sqlite database is generated as `/data/wikidata.db`.
 This sqlite database is then queried by the [PHP API](public/api.php). It is quite performant for a single user, but is untested for concurrent users.
 
 Last fetched data on 2025-12-24 (y-m-d) from: https://dumps.wikimedia.org/wikidatawiki/entities/20251222/wikidata-20251222-all.json.bz2
