@@ -31,11 +31,6 @@ CREATE TABLE said_to_be_same_as (
     said_to_be_same_as TEXT NOT NULL
 );
 
-CREATE TABLE "case" (
-    id TEXT NOT NULL,
-    "case" TEXT NOT NULL
-);
-
 CREATE INDEX idx_instance_of_id ON instance_of(id);
 CREATE INDEX idx_instance_of_instance_of ON instance_of(instance_of);
 CREATE INDEX idx_subclass_of_id ON subclass_of(id);
