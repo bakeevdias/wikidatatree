@@ -1,6 +1,8 @@
 ###import data: 
 #extract needed fields from wikidata dump under memory constrictions
-#run mongoimport and if entities collection size above limit, pause cmd, run query to filter into another collection entities_slim, then delete entities and resume cmd
+  #run mongoimport and if entities collection size above limit, pause cmd, run query to filter into another collection entities_slim, then delete entities and resume cmd
+#generate sqlite database
+#ftp it to webhost
 
 #improvements
 #TODO: 25M records without label ?
