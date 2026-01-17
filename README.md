@@ -41,7 +41,16 @@ Each item has the following structure:
    - description: **Hovering over an item shows its description if one is available.** If the item has expanded children the description is shown underneath its last child.
 
 
-## Processing
+
+## Front end
+A standalone [html page](public/index.html) is used to consume the API and render the tree.
+
+[Another version](public/index_sparql.html) of this html page is available that uses Wikidata SPARQL queries. These are slower and have some limitations, but return data that is up to date. It actually doesn't need the sqlite database, except for the search bar. (TODO: use Wikidata search API so it fully works by itself) 
+
+
+## Back end
+[R code](scripts/process_wikidata.R) is used to process a Wikidata dump into a sqlite database. The dump is downloaded, imported into MongoDB, processed there and then the sqlite database is generated as `/data/wikidata.db`.
+This sqlite database is then queried by the [PHP API](public/api.php). It is quite performant for a single user, but is untested for concurrent users.
 
 Last fetched data on 2025-12-24 (y-m-d) from: https://dumps.wikimedia.org/wikidatawiki/entities/20251222/wikidata-20251222-all.json.bz2
 
@@ -52,8 +61,10 @@ Extracted fields from export:
 
 To allow items without any parent to be accessed in the tree, all such items have been given a placeholder parent `ungrouped` (Q7), which in turn has `entity` (Q35120) as parent.
 
-## SPARQL version
-The same tree is available using Wikidata SPARQL queries, which are slower and have some limitations, but the returned data is up to date.
-https://wikidatatree.xyz/wikidata_sparql.html
+
+
+
+
+
 
 
