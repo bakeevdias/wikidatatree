@@ -162,11 +162,27 @@
             display: none;
         }
         
-        .toggle {
-            display: inline-block;
-            width: 15px;
-            font-weight: bold;
-        }
+		#breadcrumbs+ .node > .toggle {
+			display: inline-block;
+			width: 15px;
+			height: 15px;
+			line-height: 13.5px;
+			text-align: center;
+			border-radius: 50%;
+		}
+
+		#breadcrumbs+ .node.collapsed > .toggle {
+			animation: pulse 2s ease-in-out 3;
+		}
+
+		@keyframes pulse {
+			0%, 100% {
+				box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+			}
+			50% {
+				box-shadow: 0 0 0 12px rgba(0, 123, 255, 0.4);
+			}
+		}
         
         .label {
             color: #000;
@@ -208,45 +224,24 @@
     <div id="entityView"></div>
 
     <script>
-
         const API_URL = 'https://wikidatatree.xyz/api.php';
 		const childLimit = 50000;
         const searchInput = document.getElementById('searchInput');
         const resultsDiv = document.getElementById('results');
         const entityView = document.getElementById('entityView');
         const deepSearchCheckbox = document.getElementById('deepSearchCheckbox');
-        
         let searchTimeout;
         let breadcrumbPath = [];
         
-        // Helper function to format label with relation type
-        function formatLabelWithRelation(label, relationType, isChild = false) {
-            if (!relationType) return label;
-            
-            if (isChild) {
-                // For children: convert relation_type to prefix
-                if (relationType === 'part_of') {
-                    return 'part: ' + label;
-                } else if (relationType === 'instance_of') {
-                    return 'eg ' + label;
-                }
-                // For subclass_of, no prefix for children
-                return label;
-            } else {
-                // For parents: use relation_type as-is with separator
-                return relationType + ': ' + label;
-            }
-        }
-        
-        // Check for ID parameter on page load
+        //check for ID parameter on page load
         window.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);
             const entityId = urlParams.get('id');
-            if (entityId) {
-                selectEntity(entityId, true);
-            }
+            if (entityId) selectEntity(entityId);
         });
         
+		
+		//search bar
         searchInput.addEventListener('input', function() {
             const query = this.value.trim();
             clearTimeout(searchTimeout);
@@ -279,7 +274,7 @@
                 }
                 
                 resultsDiv.innerHTML = data.map(item => `
-                    <div class="result-item" onclick="selectEntity('${item.id}', true)">
+                    <div class="result-item" onclick="selectEntity('${item.id}')">
                         <div class="result-description">${escapeHtml(item.description || '')}</div>
                         <div class="result-label">${escapeHtml(item.label)} (${item.id})</div>
                     </div>
@@ -289,7 +284,11 @@
             }
         }
         
-        async function selectEntity(id, resetBreadcrumb = false) {
+        
+		//fetch main entity
+			//on page load from url?id=<id>
+			//select entity from search bar list
+		async function selectEntity(id) {
             resultsDiv.classList.remove('show');
             entityView.innerHTML = 'Loading...';
             entityView.classList.add('show');
@@ -303,9 +302,7 @@
                 const response = await fetch(url);
                 const data = await response.json();
                 
-                if (resetBreadcrumb) {
-                    breadcrumbPath = [];
-                }
+                breadcrumbPath = [];
                 
                 displayEntity(data);
             } catch (error) {
@@ -318,9 +315,9 @@
             const parents = data.parents || [];
 			const breadcrumbs = buildBreadcrumbs(parents, entity);
             const desc = entity.description ? entity.description : '';			
-                            entityView.innerHTML = `
+			entityView.innerHTML = `
                 ${breadcrumbs}
-                <div class="node collapsed" data-id="${entity.id}" data-description="${escapeHtml(desc)}">
+                <div class="node${entity.has_child ? ' collapsed' : ''}" data-id="${entity.id}" data-description="${escapeHtml(desc)}">
                     <span class="toggle" onclick="toggleNode(event, this)">${entity.has_child ? '+' : '·'}</span>
                     <span class="label">${escapeHtml(entity.label)}</span>
                     <span class="id">
@@ -328,11 +325,10 @@
                         (<a href="?id=${entity.id}" onclick="event.stopPropagation();">↑</a>)
                     </span>
                     <div class="children"></div>
-                </div>
-            `;
+                </div>`;
         }
-        
-        function buildBreadcrumbs(parents, entity) {
+		
+		function buildBreadcrumbs(parents, entity) {
             if (parents.length === 0) {
                 return '<div id="breadcrumbs">No parent hierarchy</div>';
             }
@@ -346,6 +342,8 @@
             return `<div id="breadcrumbs">${crumbs}<span class="breadcrumb-separator">|</span><span class="breadcrumb-item current">${escapeHtml(entity.label)}</span></div>`;
         }
         
+		
+		//fetch children when clicking toggle
         async function toggleNode(event, toggleElement) {
             event.stopPropagation();
             
@@ -397,6 +395,26 @@
                 // Collapse
                 toggle.textContent = '+';
                 node.classList.add('collapsed');
+            }
+        }
+        
+		
+		//helper functions
+        function formatLabelWithRelation(label, relationType, isChild = false) {
+            if (!relationType) return label;
+            
+            if (isChild) {
+                // For children: convert relation_type to prefix
+                if (relationType === 'part_of') {
+                    return 'part: ' + label;
+                } else if (relationType === 'instance_of') {
+                    return 'eg ' + label;
+                }
+                // For subclass_of, no prefix for children
+                return label;
+            } else {
+                // For parents: use relation_type as-is with separator
+                return relationType + ': ' + label;
             }
         }
         
