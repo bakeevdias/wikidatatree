@@ -172,7 +172,7 @@
 		}
 
 		#breadcrumbs+ .node.collapsed > .toggle {
-			animation: pulse 2s ease-in-out 3;
+			animation: var(--pulse-animation, pulse 2s ease-in-out 3);
 		}
 
 		@keyframes pulse {
@@ -233,8 +233,14 @@
         let searchTimeout;
         let breadcrumbPath = [];
         
-        //check for ID parameter on page load
+        //on page load
         window.addEventListener('DOMContentLoaded', function() {
+			//disable pulse animation after first interaction
+			if (localStorage.getItem('toggleHintShown')) {
+				document.documentElement.style.setProperty('--pulse-animation', 'none');
+			}
+			
+			//check for ID parameter and fetch
             const urlParams = new URLSearchParams(window.location.search);
             const entityId = urlParams.get('id');
             if (entityId) selectEntity(entityId);
@@ -347,6 +353,11 @@
         async function toggleNode(event, toggleElement) {
             event.stopPropagation();
             
+			//disable pulse animation after first interaction
+			toggleElement.style.animation = 'none';
+			localStorage.setItem('toggleHintShown', 'true');
+	
+			
             const node = toggleElement.closest('.node');
             const toggle = node.querySelector('.toggle');
             const childrenDiv = node.querySelector('.children');
