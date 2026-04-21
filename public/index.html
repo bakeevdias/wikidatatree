@@ -117,76 +117,40 @@
             margin-top: 5px;
         }
         
-        /* Increment z-index for each nesting level */
-        .node[data-description]:hover::after {
-            z-index: 1000;
-        }
-        
-        .node .node[data-description]:hover::after {
-            z-index: 1001;
-        }
-        
-        .node .node .node[data-description]:hover::after {
-            z-index: 1002;
-        }
-        
-        .node .node .node .node[data-description]:hover::after {
-            z-index: 1003;
-        }
-        
-        .node .node .node .node .node[data-description]:hover::after {
-            z-index: 1004;
-        }
-        
-        .node .node .node .node .node .node[data-description]:hover::after {
-            z-index: 1005;
-        }
-        
-        .node .node .node .node .node .node .node[data-description]:hover::after {
-            z-index: 1006;
-        }
-        
-        .node .node .node .node .node .node .node .node[data-description]:hover::after {
-            z-index: 1007;
-        }
-        
-        .node .node .node .node .node .node .node .node .node[data-description]:hover::after {
-            z-index: 1008;
-        }
-        
-        .node .node .node .node .node .node .node .node .node .node[data-description]:hover::after {
-            z-index: 1009;
-        }
+        .node[data-description]:hover::after { z-index: 1000; }
+        .node .node[data-description]:hover::after { z-index: 1001; }
+        .node .node .node[data-description]:hover::after { z-index: 1002; }
+        .node .node .node .node[data-description]:hover::after { z-index: 1003; }
+        .node .node .node .node .node[data-description]:hover::after { z-index: 1004; }
+        .node .node .node .node .node .node[data-description]:hover::after { z-index: 1005; }
+        .node .node .node .node .node .node .node[data-description]:hover::after { z-index: 1006; }
+        .node .node .node .node .node .node .node .node[data-description]:hover::after { z-index: 1007; }
+        .node .node .node .node .node .node .node .node .node[data-description]:hover::after { z-index: 1008; }
+        .node .node .node .node .node .node .node .node .node .node[data-description]:hover::after { z-index: 1009; }
         
         .collapsed > .children {
             display: none;
         }
         
-		#breadcrumbs+ .node > .toggle {
-			display: inline-block;
-			width: 15px;
-			height: 15px;
-			line-height: 13.5px;
-			text-align: center;
-			border-radius: 50%;
-		}
-
-		#breadcrumbs+ .node.collapsed > .toggle {
-			animation: var(--pulse-animation, pulse 2s ease-in-out 3);
-		}
-
-		@keyframes pulse {
-			0%, 100% {
-				box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
-			}
-			50% {
-				box-shadow: 0 0 0 12px rgba(0, 123, 255, 0.4);
-			}
-		}
-        
-        .label {
-            color: #000;
+        #breadcrumbs + .node > .toggle {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            line-height: 13.5px;
+            text-align: center;
+            border-radius: 50%;
         }
+
+        #breadcrumbs + .node.collapsed > .toggle {
+            animation: var(--pulse-animation, pulse 2s ease-in-out 3);
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
+            50% { box-shadow: 0 0 0 12px rgba(0, 123, 255, 0.4); }
+        }
+        
+        .label { color: #000; }
         
         .id {
             color: #666;
@@ -198,25 +162,80 @@
             text-decoration: none;
         }
         
-        .id a:hover {
-            text-decoration: underline;
-        }
+        .id a:hover { text-decoration: underline; }
         
         #options {
             margin-top: 10px;
-			cursor: pointer;
-        }  
+            cursor: pointer;
+        }
+
+        /* ── Export toolbar ── */
+        #exportBar {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            margin-top: 12px;
+            padding: 7px 10px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: fit-content;
+        }
+
+        #exportBar.show { display: flex; }
+
+        #exportBar span {
+            font-size: 12px;
+            color: #555;
+            margin-right: 4px;
+        }
+
+        .export-btn {
+            font-family: monospace;
+            font-size: 12px;
+            padding: 3px 10px;
+            border: 1px solid #aaa;
+            border-radius: 3px;
+            background: #fff;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .export-btn:hover {
+            background: #e8e8e8;
+            border-color: #666;
+        }
+
+        .export-btn:active {
+            background: #d0d0d0;
+        }
+
+        #exportCount {
+            font-size: 11px;
+            color: #888;
+            margin-left: 6px;
+        }
     </style>
 </head>
 <body>   
       
     <div>
-		<input type="text" id="searchInput" placeholder="Search...">
-		<label id="options" title="Set limit to 50000 children (default 500). Warning: may be slow for large hierarchies">
-			<input type="checkbox" id="deepSearchCheckbox">
-			deep search
-		</label>
-		<a href="https://github.com/bakeevdias/wikidatatree/tree/main" target="_blank" style="margin-left: 15px; color: #0066cc;">GitHub source code</a>
+        <input type="text" id="searchInput" placeholder="Search...">
+        <label id="options" title="Set limit to 50000 children (default 500). Warning: may be slow for large hierarchies">
+            <input type="checkbox" id="deepSearchCheckbox">
+            deep search
+        </label>
+        <a href="https://github.com/bakeevdias/wikidatatree/tree/main" target="_blank" style="margin-left: 15px; color: #0066cc;">GitHub source code</a>
+    </div>
+
+    <!-- Export toolbar -->
+    <div id="exportBar">
+        <span>Export:</span>
+        <button class="export-btn" onclick="exportData('json')">JSON</button>
+        <button class="export-btn" onclick="exportData('csv')">CSV</button>
+        <button class="export-btn" onclick="exportData('xml')">XML</button>
+        <button class="export-btn" onclick="exportData('txt')">Plain text</button>
+        <span id="exportCount"></span>
     </div>
     
     <div id="results"></div>
@@ -225,38 +244,32 @@
 
     <script>
         const API_URL = 'https://wikidatatree.xyz/api.php';
-		const childLimit = 50000;
+        const childLimit = 50000;
         const searchInput = document.getElementById('searchInput');
         const resultsDiv = document.getElementById('results');
         const entityView = document.getElementById('entityView');
+        const exportBar = document.getElementById('exportBar');
+        const exportCount = document.getElementById('exportCount');
         const deepSearchCheckbox = document.getElementById('deepSearchCheckbox');
         let searchTimeout;
         let breadcrumbPath = [];
         
-        //on page load
         window.addEventListener('DOMContentLoaded', function() {
-			//disable pulse animation after first interaction
-			if (localStorage.getItem('toggleHintShown')) {
-				document.documentElement.style.setProperty('--pulse-animation', 'none');
-			}
-			
-			//check for ID parameter and fetch
+            if (localStorage.getItem('toggleHintShown')) {
+                document.documentElement.style.setProperty('--pulse-animation', 'none');
+            }
             const urlParams = new URLSearchParams(window.location.search);
             const entityId = urlParams.get('id');
             if (entityId) selectEntity(entityId);
         });
         
-		
-		//search bar
         searchInput.addEventListener('input', function() {
             const query = this.value.trim();
             clearTimeout(searchTimeout);
-            
             if (query.length < 2) {
                 resultsDiv.classList.remove('show');
                 return;
             }
-            
             searchTimeout = setTimeout(() => searchEntities(query), 300);
         });
         
@@ -269,16 +282,13 @@
         async function searchEntities(query) {
             resultsDiv.innerHTML = 'Loading...';
             resultsDiv.classList.add('show');
-            
             try {
                 const response = await fetch(`${API_URL}?action=search&q=${encodeURIComponent(query)}`);
                 const data = await response.json();
-                
                 if (data.length === 0) {
                     resultsDiv.innerHTML = 'No results';
                     return;
                 }
-                
                 resultsDiv.innerHTML = data.map(item => `
                     <div class="result-item" onclick="selectEntity('${item.id}')">
                         <div class="result-description">${escapeHtml(item.description || '')}</div>
@@ -290,26 +300,20 @@
             }
         }
         
-        
-		//fetch main entity
-			//on page load from url?id=<id>
-			//select entity from search bar list
-		async function selectEntity(id) {
+        async function selectEntity(id) {
             resultsDiv.classList.remove('show');
             entityView.innerHTML = 'Loading...';
             entityView.classList.add('show');
+            exportBar.classList.remove('show');
             
             try {
                 const limit = deepSearchCheckbox.checked ? childLimit : null;
                 const url = limit 
                     ? `${API_URL}?action=hierarchy&fields=entity,parents&id=${encodeURIComponent(id)}&limit=${limit}`
                     : `${API_URL}?action=hierarchy&fields=entity,parents&id=${encodeURIComponent(id)}`;
-                
                 const response = await fetch(url);
                 const data = await response.json();
-                
                 breadcrumbPath = [];
-                
                 displayEntity(data);
             } catch (error) {
                 entityView.innerHTML = 'Error';
@@ -319,9 +323,9 @@
         function displayEntity(data) {
             const entity = data.entity;
             const parents = data.parents || [];
-			const breadcrumbs = buildBreadcrumbs(parents, entity);
-            const desc = entity.description ? entity.description : '';			
-			entityView.innerHTML = `
+            const breadcrumbs = buildBreadcrumbs(parents, entity);
+            const desc = entity.description ? entity.description : '';
+            entityView.innerHTML = `
                 ${breadcrumbs}
                 <div class="node${entity.has_child ? ' collapsed' : ''}" data-id="${entity.id}" data-description="${escapeHtml(desc)}">
                     <span class="toggle" onclick="toggleNode(event, this)">${entity.has_child ? '+' : '·'}</span>
@@ -332,47 +336,37 @@
                     </span>
                     <div class="children"></div>
                 </div>`;
+            refreshExportBar();
         }
-		
-		function buildBreadcrumbs(parents, entity) {
+        
+        function buildBreadcrumbs(parents, entity) {
             if (parents.length === 0) {
                 return '<div id="breadcrumbs">No parent hierarchy</div>';
             }
-            
-            // Show all parents as clickable breadcrumbs with relation type
             const crumbs = parents.map(p => {
                 const displayLabel = formatLabelWithRelation(p.label, p.relation_type, false);
                 return `<a href="?id=${p.id}" class="breadcrumb-item">${escapeHtml(displayLabel)}</a>`;
             }).join('<span class="breadcrumb-separator">|</span>');
-            
             return `<div id="breadcrumbs">${crumbs}<span class="breadcrumb-separator">|</span><span class="breadcrumb-item current">${escapeHtml(entity.label)}</span></div>`;
         }
         
-		
-		//fetch children when clicking toggle
         async function toggleNode(event, toggleElement) {
             event.stopPropagation();
+            toggleElement.style.animation = 'none';
+            localStorage.setItem('toggleHintShown', 'true');
             
-			//disable pulse animation after first interaction
-			toggleElement.style.animation = 'none';
-			localStorage.setItem('toggleHintShown', 'true');
-	
-			
             const node = toggleElement.closest('.node');
             const toggle = node.querySelector('.toggle');
             const childrenDiv = node.querySelector('.children');
             const id = node.dataset.id;
             
             if (node.classList.contains('collapsed')) {
-                // Expand - load children
                 toggle.textContent = '...';
-                
                 try {
                     const limit = deepSearchCheckbox.checked ? childLimit : null;
                     const url = limit 
                         ? `${API_URL}?action=hierarchy&id=${encodeURIComponent(id)}&limit=${limit}`
                         : `${API_URL}?action=hierarchy&id=${encodeURIComponent(id)}`;
-                    
                     const response = await fetch(url);
                     const data = await response.json();
                     
@@ -398,33 +392,185 @@
                     
                     toggle.textContent = '-';
                     node.classList.remove('collapsed');
+                    refreshExportBar();
                 } catch (error) {
                     toggle.textContent = '!';
                     console.error(error);
                 }
             } else {
-                // Collapse
                 toggle.textContent = '+';
                 node.classList.add('collapsed');
+                refreshExportBar();
             }
         }
-        
-		
-		//helper functions
+
+
+        /* ══════════════════════════════════════════
+           TREE EXTRACTION
+           Walk ALL .node elements (loaded in DOM),
+           regardless of collapsed/expanded state.
+        ══════════════════════════════════════════ */
+
+        function extractTree() {
+            // Find the root node (direct child of entityView, not nested)
+            const rootNode = entityView.querySelector(':scope > .node');
+            if (!rootNode) return null;
+            return extractNode(rootNode, 0);
+        }
+
+        function extractNode(nodeEl, depth) {
+            const id    = nodeEl.dataset.id || '';
+            const label = nodeEl.querySelector(':scope > .label')?.textContent?.trim() || '';
+            const desc  = nodeEl.dataset.description || '';
+
+            const childEls = nodeEl.querySelectorAll(':scope > .children > .node');
+            const children = Array.from(childEls).map(c => extractNode(c, depth + 1));
+
+            return { id, label, description: desc, depth, children };
+        }
+
+        // Flatten tree to array with depth info
+        function flattenTree(node, rows = []) {
+            rows.push(node);
+            for (const child of node.children) flattenTree(child, rows);
+            return rows;
+        }
+
+        function refreshExportBar() {
+            const tree = extractTree();
+            if (!tree) { exportBar.classList.remove('show'); return; }
+            const count = flattenTree(tree).length;
+            exportBar.classList.add('show');
+            exportCount.textContent = `(${count} node${count !== 1 ? 's' : ''} loaded)`;
+        }
+
+
+        /* ══════════════════════════════════════════
+           SERIALIZERS
+        ══════════════════════════════════════════ */
+
+        function toJSON(tree) {
+            function clean(node) {
+                const obj = { id: node.id, label: node.label };
+                if (node.description) obj.description = node.description;
+                if (node.children.length) obj.children = node.children.map(clean);
+                return obj;
+            }
+            return JSON.stringify(clean(tree), null, 2);
+        }
+
+        function toCSV(tree) {
+            const rows = flattenTree(tree);
+            const header = 'id,label,description,depth,parent_id';
+            // Build parent map
+            function buildParentMap(node, parentId, map) {
+                map[node.id] = parentId;
+                for (const c of node.children) buildParentMap(c, node.id, map);
+                return map;
+            }
+            const parentMap = buildParentMap(tree, '', {});
+            const lines = rows.map(r => {
+                const parentId = parentMap[r.id] || '';
+                return [r.id, csvEscape(r.label), csvEscape(r.description), r.depth, parentId].join(',');
+            });
+            return [header, ...lines].join('\n');
+        }
+
+        function csvEscape(val) {
+            if (!val) return '';
+            if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+                return '"' + val.replace(/"/g, '""') + '"';
+            }
+            return val;
+        }
+
+        function toXML(tree) {
+            function nodeToXml(node, indent) {
+                const pad = ' '.repeat(indent * 2);
+                const attrs = `id="${xmlEscape(node.id)}" label="${xmlEscape(node.label)}"${node.description ? ` description="${xmlEscape(node.description)}"` : ''}`;
+                if (!node.children.length) return `${pad}<node ${attrs}/>`;
+                const inner = node.children.map(c => nodeToXml(c, indent + 1)).join('\n');
+                return `${pad}<node ${attrs}>\n${inner}\n${pad}</node>`;
+            }
+            return `<?xml version="1.0" encoding="UTF-8"?>\n<tree>\n${nodeToXml(tree, 1)}\n</tree>`;
+        }
+
+        function xmlEscape(val) {
+            if (!val) return '';
+            return val.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function toPlainText(tree) {
+            const lines = [];
+            function walk(node, depth) {
+                const indent = depth === 0 ? '' : '  '.repeat(depth - 1) + '- ';
+                const line = `${indent}${node.label} (${node.id})${node.description ? ' — ' + node.description : ''}`;
+                lines.push(line);
+                for (const child of node.children) walk(child, depth + 1);
+            }
+            walk(tree, 0);
+            return lines.join('\n');
+        }
+
+
+        /* ══════════════════════════════════════════
+           DOWNLOAD TRIGGER
+        ══════════════════════════════════════════ */
+
+        function exportData(format) {
+            const tree = extractTree();
+            if (!tree) { alert('No data loaded.'); return; }
+
+            let content, mime, ext;
+            switch (format) {
+                case 'json':
+                    content = toJSON(tree);
+                    mime = 'application/json';
+                    ext = 'json';
+                    break;
+                case 'csv':
+                    content = toCSV(tree);
+                    mime = 'text/csv';
+                    ext = 'csv';
+                    break;
+                case 'xml':
+                    content = toXML(tree);
+                    mime = 'application/xml';
+                    ext = 'xml';
+                    break;
+                case 'txt':
+                    content = toPlainText(tree);
+                    mime = 'text/plain;charset=utf-8';
+                    ext = 'txt';
+                    break;
+                default:
+                    return;
+            }
+
+            const filename = `wikidata-${tree.id || 'tree'}-${Date.now()}.${ext}`;
+            const blob = new Blob([content], { type: mime });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href     = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+
+        /* ══════════════════════════════════════════
+           HELPERS
+        ══════════════════════════════════════════ */
+
         function formatLabelWithRelation(label, relationType, isChild = false) {
             if (!relationType) return label;
-            
             if (isChild) {
-                // For children: convert relation_type to prefix
-                if (relationType === 'part_of') {
-                    return 'part: ' + label;
-                } else if (relationType === 'instance_of') {
-                    return 'eg ' + label;
-                }
-                // For subclass_of, no prefix for children
+                if (relationType === 'part_of') return 'part: ' + label;
+                if (relationType === 'instance_of') return 'eg ' + label;
                 return label;
             } else {
-                // For parents: use relation_type as-is with separator
                 return relationType + ': ' + label;
             }
         }
