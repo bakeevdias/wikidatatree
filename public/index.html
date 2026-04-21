@@ -230,6 +230,8 @@
 
     <!-- Export toolbar -->
     <div id="exportBar">
+        <button class="export-btn" id="expandAllBtn" onclick="expandAll()">⊞ expand all</button>
+        <span style="color:#ccc;margin:0 2px">|</span>
         <span>Export:</span>
         <button class="export-btn" onclick="exportData('json')">JSON</button>
         <button class="export-btn" onclick="exportData('csv')">CSV</button>
@@ -401,6 +403,71 @@
                 toggle.textContent = '+';
                 node.classList.add('collapsed');
                 refreshExportBar();
+            }
+        }
+
+
+        /* ══════════════════════════════════════════
+           EXPAND ALL
+        ══════════════════════════════════════════ */
+
+        let expandAllCancelled = false;
+
+        async function expandAll() {
+            expandAllCancelled = false;
+            const btn = document.getElementById('expandAllBtn');
+            btn.textContent = '⏹ stop';
+            btn.onclick = () => { expandAllCancelled = true; };
+
+            const rootNode = entityView.querySelector(':scope > .node');
+            if (rootNode) {
+                const rootId = rootNode.dataset.id;
+                const ancestorIds = new Set(rootId ? [rootId] : []);
+
+                // If root is collapsed, expand it first
+                if (rootNode.classList.contains('collapsed')) {
+                    const toggleEl = rootNode.querySelector(':scope > .toggle');
+                    if (toggleEl && toggleEl.textContent.trim() === '+') {
+                        await toggleNode({ stopPropagation: () => {} }, toggleEl);
+                    }
+                }
+
+                // Recurse into root's children
+                const childrenDiv = rootNode.querySelector(':scope > .children');
+                if (childrenDiv) await expandAllRecursive(childrenDiv, ancestorIds);
+            }
+
+            btn.textContent = '⊞ expand all';
+            btn.onclick = expandAll;
+            refreshExportBar();
+        }
+
+        async function expandAllRecursive(container, ancestorIds = new Set()) {
+            if (expandAllCancelled) return;
+
+            const collapsedNodes = Array.from(container.querySelectorAll(':scope > .node.collapsed'));
+            for (const node of collapsedNodes) {
+                if (expandAllCancelled) return;
+
+                const id = node.dataset.id;
+                if (id && ancestorIds.has(id)) {
+                    // Cycle detected — mark visually and skip
+                    const toggleEl = node.querySelector(':scope > .toggle');
+                    if (toggleEl) { toggleEl.textContent = '∞'; toggleEl.title = 'Cycle detected'; }
+                    continue;
+                }
+
+                const toggleEl = node.querySelector(':scope > .toggle');
+                if (!toggleEl || toggleEl.textContent.trim() !== '+') continue;
+
+                await toggleNode({ stopPropagation: () => {} }, toggleEl);
+
+                const childrenDiv = node.querySelector(':scope > .children');
+                if (childrenDiv) {
+                    const nextAncestors = new Set(ancestorIds);
+                    if (id) nextAncestors.add(id);
+                    await expandAllRecursive(childrenDiv, nextAncestors);
+                }
             }
         }
 
