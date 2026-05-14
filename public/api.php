@@ -4,7 +4,7 @@
  * 
  * Endpoints:
  * - GET /api.php?action=search&q=text&limit=10
- * - GET /api.php?action=hierarchy&id=Q42&limit=10&fields=entity,parents
+ * - GET /api.php?action=hierarchy&id=Q42&limit=10&fields=entity,parents&relations=subclass_of,part_of,instance_of
  */
 
 header('Content-Type: application/json');
@@ -21,18 +21,15 @@ try {
     die(json_encode(['error' => 'Database connection failed']));
 }
 
-// Get action from query string
 $action = $_GET['action'] ?? '';
 
 switch ($action) {
     case 'search':
         handleSearch($pdo);
         break;
-    
     case 'hierarchy':
         handleHierarchy($pdo);
         break;
-    
     default:
         http_response_code(400);
         echo json_encode(['error' => 'Invalid action. Use: search or hierarchy']);
@@ -40,7 +37,6 @@ switch ($action) {
 
 /**
  * Endpoint 1: Text search in labels
- * Returns top 100 entities with matching labels
  */
 function handleSearch($pdo) {
     $query = $_GET['q'] ?? '';
@@ -63,8 +59,6 @@ function handleSearch($pdo) {
         return;
     }
     
-    
-    
     $limit = 100;
     if (isset($_GET['limit']) && ctype_digit($_GET['limit'])) {
         $limit = (int) $_GET['limit'];
@@ -72,10 +66,10 @@ function handleSearch($pdo) {
     
     $stmt = $pdo->prepare("
         WITH hits AS (
-        	SELECT rowid
-        	FROM entity_text_fts
-        	WHERE entity_text_fts MATCH :match
-        	LIMIT :limit
+            SELECT rowid
+            FROM entity_text_fts
+            WHERE entity_text_fts MATCH :match
+            LIMIT :limit
         )
         SELECT e.id, e.label, e.description
         FROM hits
@@ -96,7 +90,8 @@ function handleSearch($pdo) {
 
 /**
  * Endpoint 2: Get entity hierarchy
- * Returns parents and direct children
+ * Returns parents and direct children, filtered by relation types.
+ * &relations=subclass_of,part_of,instance_of  (default: all three)
  */
 function handleHierarchy($pdo) {
     $id = $_GET['id'] ?? '';
@@ -111,16 +106,26 @@ function handleHierarchy($pdo) {
         $limit = (int) $_GET['limit'];
     }
     
-    $fields = ['entity','parents','children'];
+    $fields = ['entity', 'parents', 'children'];
     if (isset($_GET['fields'])) {
-        $input_fields = explode (',', trim((string) $_GET['fields']));
+        $input_fields = explode(',', trim((string) $_GET['fields']));
         $input_fields = array_intersect($fields, $input_fields);
         $fields = empty($input_fields) ? $fields : $input_fields;
     }
 
-    
-    
-    
+    // Parse allowed relation types (default: all)
+    $allowed_relations = ['subclass_of', 'part_of', 'instance_of'];
+    if (isset($_GET['relations'])) {
+        $input_relations = explode(',', trim((string) $_GET['relations']));
+        $input_relations = array_intersect($allowed_relations, $input_relations);
+        $allowed_relations = empty($input_relations) ? $allowed_relations : $input_relations;
+    }
+
+    $use_subclass  = in_array('subclass_of',  $allowed_relations, true);
+    $use_part_of   = in_array('part_of',      $allowed_relations, true);
+    $use_instance  = in_array('instance_of',  $allowed_relations, true);
+
+
     if (in_array('entity', $fields, true)) {
         $stmt = $pdo->prepare("
             SELECT t.id, t.label, t.description, d.has_child
@@ -129,7 +134,6 @@ function handleHierarchy($pdo) {
             ) t
             JOIN entity_data d ON d.id = t.id;
         ");
-        
         $stmt->execute(['id' => $id]);
         $entity = $stmt->fetch();
         
@@ -137,141 +141,120 @@ function handleHierarchy($pdo) {
             http_response_code(404);
             echo json_encode(['error' => 'Entity not found']);
             return;
-        }   
+        }
     }
 
     if (in_array('parents', $fields, true)) {
         $parents = [];
-        
-        // subclass_of
-        $stmt = $pdo->prepare("
-            SELECT t.id, t.label, t.description, 'subclass_of' as relation_type
+
+        if ($use_subclass) {
+            $stmt = $pdo->prepare("
+                SELECT t.id, t.label, t.description, 'subclass_of' as relation_type
             FROM (
                 SELECT subclass_of
                 FROM subclass_of
                 WHERE id = :id
                 LIMIT :limit
             ) c
-            JOIN entity_text t ON c.subclass_of = t.id
-            ORDER BY t.label COLLATE NOCASE;
-        ");
-        $stmt->execute([
-            'id' => $id, 
-            'limit' => $limit
-        ]);
-        $parents = array_merge($parents, $stmt->fetchAll());
-        
-        
-        // part_of
-        $stmt = $pdo->prepare("
-            SELECT t.id, t.label, t.description, 'part_of' as relation_type
+                JOIN entity_text t ON c.subclass_of = t.id
+                ORDER BY t.label COLLATE NOCASE;
+            ");
+            $stmt->execute(['id' => $id, 'limit' => $limit]);
+            $parents = array_merge($parents, $stmt->fetchAll());
+        }
+
+        if ($use_part_of) {
+            $stmt = $pdo->prepare("
+                SELECT t.id, t.label, t.description, 'part_of' as relation_type
             FROM (
                 SELECT part_of
                 FROM part_of r
                 WHERE id = :id
                 LIMIT :limit
             ) c
-            JOIN entity_text t ON c.part_of = t.id
-            ORDER BY t.label COLLATE NOCASE;
-        ");
-        $stmt->execute([
-            'id' => $id, 
-            'limit' => $limit
-        ]);
-        $parents = array_merge($parents, $stmt->fetchAll());
-        
-        
-        
-        // instance_of
-        $stmt = $pdo->prepare("
-            SELECT t.id, t.label, t.description, 'instance_of' as relation_type
+                JOIN entity_text t ON c.part_of = t.id
+                ORDER BY t.label COLLATE NOCASE;
+            ");
+            $stmt->execute(['id' => $id, 'limit' => $limit]);
+            $parents = array_merge($parents, $stmt->fetchAll());
+        }
+
+        if ($use_instance) {
+            $stmt = $pdo->prepare("
+                SELECT t.id, t.label, t.description, 'instance_of' as relation_type
             FROM (
                 SELECT instance_of
                 FROM instance_of r
                 WHERE id = :id
                 LIMIT :limit
             ) c
-            JOIN entity_text t ON c.instance_of = t.id
-            ORDER BY t.label COLLATE NOCASE;
-        ");
-        $stmt->execute([
-            'id' => $id, 
-            'limit' => $limit
-        ]);
-        $parents = array_merge($parents, $stmt->fetchAll());
+                JOIN entity_text t ON c.instance_of = t.id
+                ORDER BY t.label COLLATE NOCASE;
+            ");
+            $stmt->execute(['id' => $id, 'limit' => $limit]);
+            $parents = array_merge($parents, $stmt->fetchAll());
+        }
     }
 
-    
     if (in_array('children', $fields, true)) {
         $children = [];
-        
-        // subclass_of (children are entities that are subclasses of this entity)
-        $stmt = $pdo->prepare("
-            SELECT t.id, t.label, t.description, d.has_child, 'subclass_of' as relation_type
+
+        if ($use_subclass) {
+            $stmt = $pdo->prepare("
+                SELECT t.id, t.label, t.description, d.has_child, 'subclass_of' as relation_type
             FROM (
                 SELECT id
                 FROM subclass_of r
                 WHERE subclass_of = :id
                 LIMIT :limit
             ) c
-            JOIN entity_text t ON t.id = c.id
-            JOIN entity_data d ON d.id = c.id
-            ORDER BY t.label COLLATE NOCASE;
-        ");
-        $stmt->execute([
-            'id' => $id, 
-            'limit' => $limit
-        ]);
-        $children = array_merge($children, $stmt->fetchAll());
-        
-        
-        // part_of (children are entities that are parts of this entity)
-        $stmt = $pdo->prepare("
-            SELECT t.id, t.label, t.description, d.has_child, 'part_of' as relation_type
+                JOIN entity_text t ON t.id = c.id
+                JOIN entity_data d ON d.id = c.id
+                ORDER BY t.label COLLATE NOCASE;
+            ");
+            $stmt->execute(['id' => $id, 'limit' => $limit]);
+            $children = array_merge($children, $stmt->fetchAll());
+        }
+
+        if ($use_part_of) {
+            $stmt = $pdo->prepare("
+                SELECT t.id, t.label, t.description, d.has_child, 'part_of' as relation_type
             FROM (
                 SELECT id
                 FROM part_of r
                 WHERE part_of = :id
                 LIMIT :limit
             ) c
-            JOIN entity_text t ON t.id = c.id
-            JOIN entity_data d ON d.id = c.id
-            ORDER BY t.label COLLATE NOCASE;
-        ");
-        $stmt->execute([
-            'id' => $id, 
-            'limit' => $limit
-        ]);
-        $children = array_merge($children, $stmt->fetchAll());
-        
-        
-        
-        // instance_of (children are entities that are instances of this entity)
-        $stmt = $pdo->prepare("
-            SELECT t.id, t.label, t.description, d.has_child, 'instance_of' as relation_type
+                JOIN entity_text t ON t.id = c.id
+                JOIN entity_data d ON d.id = c.id
+                ORDER BY t.label COLLATE NOCASE;
+            ");
+            $stmt->execute(['id' => $id, 'limit' => $limit]);
+            $children = array_merge($children, $stmt->fetchAll());
+        }
+
+        if ($use_instance) {
+            $stmt = $pdo->prepare("
+                SELECT t.id, t.label, t.description, d.has_child, 'instance_of' as relation_type
             FROM (
                 SELECT id
                 FROM instance_of r
                 WHERE instance_of = :id
                 LIMIT :limit
             ) c
-            JOIN entity_text t ON t.id = c.id
-            JOIN entity_data d ON d.id = c.id
-            ORDER BY t.label COLLATE NOCASE;
-        ");
-        $stmt->execute([
-            'id' => $id, 
-            'limit' => $limit
-        ]);
-        $children = array_merge($children, $stmt->fetchAll());
+                JOIN entity_text t ON t.id = c.id
+                JOIN entity_data d ON d.id = c.id
+                ORDER BY t.label COLLATE NOCASE;
+            ");
+            $stmt->execute(['id' => $id, 'limit' => $limit]);
+            $children = array_merge($children, $stmt->fetchAll());
+        }
     }
 
     $response = [];
-    if (in_array('entity', $fields, true)) $response['entity'] = $entity;
-    if (in_array('parents', $fields, true)) $response['parents'] = $parents;
+    if (in_array('entity',   $fields, true)) $response['entity']   = $entity;
+    if (in_array('parents',  $fields, true)) $response['parents']  = $parents;
     if (in_array('children', $fields, true)) $response['children'] = $children;
     echo json_encode($response);
-
 }
-
 ?>

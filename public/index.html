@@ -225,6 +225,9 @@
             <input type="checkbox" id="deepSearchCheckbox">
             deep search
         </label>
+        <label id="options" style="margin-left:12px"><input type="checkbox" id="relSubclass" checked> subclass_of</label>
+        <label id="options" style="margin-left:6px"><input type="checkbox" id="relPartOf"> part_of</label>
+        <label id="options" style="margin-left:6px"><input type="checkbox" id="relInstance"> instance_of</label>
         <a href="https://github.com/bakeevdias/wikidatatree/tree/main" target="_blank" style="margin-left: 15px; color: #0066cc;">GitHub source code</a>
     </div>
 
@@ -253,6 +256,14 @@
         const exportBar = document.getElementById('exportBar');
         const exportCount = document.getElementById('exportCount');
         const deepSearchCheckbox = document.getElementById('deepSearchCheckbox');
+
+        function getRelationsParam() {
+            const rel = [];
+            if (document.getElementById('relSubclass').checked) rel.push('subclass_of');
+            if (document.getElementById('relPartOf').checked)   rel.push('part_of');
+            if (document.getElementById('relInstance').checked) rel.push('instance_of');
+            return rel.length ? '&relations=' + rel.join(',') : '';
+        }
         let searchTimeout;
         let breadcrumbPath = [];
         
@@ -311,8 +322,8 @@
             try {
                 const limit = deepSearchCheckbox.checked ? childLimit : null;
                 const url = limit 
-                    ? `${API_URL}?action=hierarchy&fields=entity,parents&id=${encodeURIComponent(id)}&limit=${limit}`
-                    : `${API_URL}?action=hierarchy&fields=entity,parents&id=${encodeURIComponent(id)}`;
+                    ? `${API_URL}?action=hierarchy&fields=entity,parents&id=${encodeURIComponent(id)}&limit=${limit}${getRelationsParam()}`
+                    : `${API_URL}?action=hierarchy&fields=entity,parents&id=${encodeURIComponent(id)}${getRelationsParam()}`;
                 const response = await fetch(url);
                 const data = await response.json();
                 breadcrumbPath = [];
@@ -367,8 +378,8 @@
                 try {
                     const limit = deepSearchCheckbox.checked ? childLimit : null;
                     const url = limit 
-                        ? `${API_URL}?action=hierarchy&id=${encodeURIComponent(id)}&limit=${limit}`
-                        : `${API_URL}?action=hierarchy&id=${encodeURIComponent(id)}`;
+                        ? `${API_URL}?action=hierarchy&id=${encodeURIComponent(id)}&limit=${limit}${getRelationsParam()}`
+                        : `${API_URL}?action=hierarchy&id=${encodeURIComponent(id)}${getRelationsParam()}`;
                     const response = await fetch(url);
                     const data = await response.json();
                     
