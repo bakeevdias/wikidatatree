@@ -1,4 +1,3 @@
-api_dev
 <?php
 /**
  * Wikidata PHP SQLite API
